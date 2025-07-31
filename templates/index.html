@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Space+Grotesk:wght@400;500;700" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<title>CaptionCraft - Neo-Brutalist Subtitle Generator</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --primary-color: #167bce;
+        --secondary-color: #e0e7ff;
+        --background-color: #f0f0f0;
+        --text-primary: #000000;
+        --text-secondary: #333333;
+        --accent-color: #167bce;
+        --neo-brutal-bg: #f0f0f0;
+        --neo-brutal-border: #000000;
+        --neo-brutal-text: #000000;
+      }
+      body {
+        font-family: 'Space Grotesk', sans-serif;
+        background-color: var(--neo-brutal-bg);
+        color: var(--neo-brutal-text);
+      }
+      .main_container {
+        @apply container mx-auto px-4 py-8;
+      }
+      .card {
+        @apply bg-white border border-[var(--neo-brutal-border)] rounded-none p-6 shadow-[4px_4px_0px_#000];
+      }
+      .button_primary {
+        @apply bg-[var(--primary-color)] text-white py-3 px-6 rounded-none hover:bg-[var(--accent-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 border-2 border-[var(--neo-brutal-border)] shadow-[2px_2px_0px_#000] hover:shadow-none transition-all duration-200;
+      }
+      .button_secondary {
+        @apply bg-[var(--secondary-color)] text-[var(--text-primary)] py-3 px-6 rounded-none hover:bg-[var(--accent-color)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 border-2 border-[var(--neo-brutal-border)] shadow-[2px_2px_0px_#000] hover:shadow-none transition-all duration-200;
+      }
+      .input {
+        @apply bg-white border-2 border-[var(--neo-brutal-border)] rounded-none px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 w-full;
+      }
+      .typography_h1 {
+        @apply text-4xl lg:text-5xl font-bold mb-4 text-[var(--neo-brutal-text)];
+      }
+      .typography_h2 {
+        @apply text-3xl font-semibold mb-3;
+      }
+      .typography_h3 {
+        @apply text-2xl font-medium mb-2;
+      }
+      .typography_body {
+        @apply text-base text-[var(--text-secondary)];
+      }
+      .upload_area {
+        @apply border-2 border-dashed border-[var(--neo-brutal-border)] rounded-none p-10 lg:p-20 text-center;
+      }
+      .file_name {
+        @apply font-mono text-sm text-gray-500;
+      }
+      .subtitle_output {
+        @apply bg-gray-100 p-4 rounded-none overflow-auto max-h-64 border-2 border-[var(--neo-brutal-border)];
+      }
+      .subtitle_item {
+        @apply py-2 border-b-2 border-gray-200 last:border-b-0;
+      }
+      .download_button {
+        @apply bg-green-500 text-white py-2 px-4 rounded-none hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 border-2 border-[var(--neo-brutal-border)];
+      }
+      .progress-section {
+        display: none;
+      }
+      .config_card {
+        @apply bg-white border-2 border-[var(--neo-brutal-border)] rounded-none p-6 shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] transition-all duration-200;
+      }
+      .config_select {
+        @apply bg-white border-2 border-[var(--neo-brutal-border)] rounded-none px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 w-full font-medium;
+      }
+      .config_checkbox {
+        @apply border-2 border-[var(--neo-brutal-border)] rounded-none w-5 h-5 text-[var(--primary-color)] focus:ring-2 focus:ring-[var(--accent-color)];
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+        40%, 43% { transform: translateY(-8px); }
+        70% { transform: translateY(-4px); }
+        90% { transform: translateY(-2px); }
+      }
+      .upload_area:hover {
+        transform: translateY(-2px);
+        box-shadow: 6px 6px 0px #000;
+      }
+      .format-tag:hover {
+        transform: scale(1.1);
+        z-index: 10;
+      }
+      .notification {
+        backdrop-filter: blur(10px);
+      }
+    </style>
+<!-- Socket.IO -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+</head>
+<body class="bg-neo-brutal-bg text-neo-brutal-text">
+<div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="border-b-2 border-solid border-neo-brutal-border px-4 lg:px-10 py-4 bg-white">
+<div class="flex items-center justify-between whitespace-nowrap max-w-7xl mx-auto">
+<div class="flex items-center gap-4 text-neo-brutal-text">
+<div class="size-6">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-xl font-bold tracking-[-0.015em]">CaptionCraft</h2>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<div class="flex items-center gap-2 text-sm">
+<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" id="statusDot"></div>
+<span class="text-neo-brutal-text font-medium" id="systemStatus">{{ 'CUDA Ready' if cuda_available else 'CPU Mode' }}</span>
+</div>
+<a class="text-neo-brutal-text text-base font-medium hover:text-blue-600 transition-colors" href="#">Features</a>
+<a class="text-neo-brutal-text text-base font-medium hover:text-blue-600 transition-colors" href="#">Pricing</a>
+<a class="text-neo-brutal-text text-base font-medium hover:text-blue-600 transition-colors" href="#">Support</a>
+<button class="button_primary text-sm font-bold hover:scale-105 transition-transform">
+<span class="truncate">Get Started</span>
+</button>
+</div>
+<button class="md:hidden flex items-center justify-center p-2 border-2 border-neo-brutal-border rounded-none">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 6h16M4 12h16m-7 6h7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</header>
+<main class="main_container flex-1">
+<div class="flex flex-col items-center justify-center text-center py-10 lg:py-20">
+<div class="max-w-3xl">
+<h1 class="typography_h1">Generate Subtitles with Brutal Simplicity</h1>
+<p class="typography_body mt-4 max-w-xl mx-auto">
+                Drag, drop, and get perfectly timed subtitles. No frills, no fuss. We support MP4, MOV, and AVI. Let's get to it.
+              </p>
+</div>
+<div class="w-full max-w-2xl mt-8">
+<div class="config_card">
+<h3 class="typography_h3 text-center">⚙️ Processing Configuration</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+<div>
+<label class="block text-sm font-bold text-neo-brutal-text mb-3 uppercase tracking-wide" for="modelSelect">
+🧠 AI Model
+</label>
+<select id="modelSelect" class="config_select">
+<option value="tiny">Tiny - Fast &amp; Light (39MB)</option>
+<option value="base" selected>Base - Balanced (74MB)</option>
+<option value="small">Small - Better Quality (244MB)</option>
+<option value="medium">Medium - High Quality (769MB)</option>
+<option value="large">Large - Best Quality (1.5GB)</option>
+</select>
+<div class="mt-2 text-xs text-gray-600" id="modelInfo">
+<span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">Speed: ~16x</span>
+<span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded ml-1">Quality: Good</span>
+<span class="inline-block bg-orange-100 text-orange-800 px-2 py-1 rounded ml-1">VRAM: 1GB</span>
+</div>
+</div>
+<div>
+<label class="block text-sm font-bold text-neo-brutal-text mb-3 uppercase tracking-wide" for="languageSelect">
+🌍 Language
+</label>
+<select id="languageSelect" class="config_select">
+<option value="auto" selected>Auto-detect</option>
+</select>
+</div>
+</div>
+<div class="mt-6 p-4 bg-gray-50 border-2 border-dashed border-gray-300">
+<label class="flex items-center gap-3 cursor-pointer">
+<input type="checkbox" id="vadToggle" checked class="config_checkbox">
+<span class="text-sm font-bold text-neo-brutal-text uppercase tracking-wide">🎯 Enhanced Audio Processing</span>
+</label>
+<p class="text-xs text-gray-600 mt-2 ml-8">Improves accuracy for noisy audio</p>
+</div>
+</div>
+</div>
+<div class="w-full max-w-2xl mt-6">
+<div class="card p-0">
+<div class="upload_area" id="uploadZone">
+<div class="flex flex-col items-center gap-4">
+<svg class="h-16 w-16 text-neo-brutal-text" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v5a4 4 0 01-4 4H7z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<div class="upload-text text-center">
+<p class="text-lg font-bold leading-tight tracking-[-0.015em]">Drag &amp; Drop Your Video Here</p>
+<p class="text-sm font-normal">or</p>
+</div>
+<button class="button_secondary text-sm font-bold" id="browseFilesBtn">
+<span class="truncate">Browse Files</span>
+</button>
+<div class="mt-4 text-center">
+<p class="text-xs text-gray-500 mb-2">Supported formats:</p>
+<div class="flex flex-wrap justify-center gap-2">
+<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-black">MP4</span>
+<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-black">AVI</span>
+<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded border border-black">MOV</span>
+<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded border border-black">MKV</span>
+<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded border border-black">MP3</span>
+<span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded border border-black">WAV</span>
+</div>
+<p class="text-xs text-gray-400 mt-2">Max size: 5GB • Keyboard shortcut: Ctrl+U</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="w-full max-w-2xl mt-12 progress-section" id="progressSection">
+<div class="flex flex-col gap-3">
+<div class="flex gap-6 justify-between">
+<p class="text-neo-brutal-text text-base font-medium leading-normal" id="progressStatus">Uploading your_video.mp4...</p>
+<p class="text-neo-brutal-text text-base font-medium leading-normal" id="progressPercentage">20%</p>
+</div>
+<div class="rounded-none bg-white border-2 border-neo-brutal-border h-6 p-1">
+<div class="h-full rounded-none bg-primary-color" id="progressFill" style="width: 20%;"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept=".mp4,.avi,.mov,.mkv,.mp3,.wav,.m4a,.flac,.ogg" hidden>
+
+<!-- Footer -->
+<footer class="bg-white border-t-2 border-black mt-16">
+<div class="max-w-7xl mx-auto px-4 py-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<div>
+<h3 class="font-bold text-lg mb-4">CaptionCraft</h3>
+<p class="text-sm text-gray-600 mb-4">AI-powered subtitle generation with neo-brutalist design. Fast, accurate, and beautiful.</p>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">AI Powered</span>
+<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Open Source</span>
+</div>
+</div>
+<div>
+<h4 class="font-bold mb-4">Features</h4>
+<ul class="text-sm text-gray-600 space-y-2">
+<li>• Multiple AI models</li>
+<li>• 20+ languages</li>
+<li>• Real-time editing</li>
+<li>• Multiple formats</li>
+<li>• Batch processing</li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold mb-4">Formats</h4>
+<ul class="text-sm text-gray-600 space-y-2">
+<li>• SRT (SubRip)</li>
+<li>• VTT (WebVTT)</li>
+<li>• ASS (Advanced SSA)</li>
+<li>• TXT (Plain text)</li>
+<li>• Custom formats</li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold mb-4">System Status</h4>
+<div class="text-sm space-y-2">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-green-500 rounded-full"></div>
+<span>{{ 'CUDA Acceleration' if cuda_available else 'CPU Processing' }}</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+<span>Whisper AI Ready</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+<span>Real-time Processing</span>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-gray-200 mt-8 pt-8 text-center text-sm text-gray-500">
+<p>&copy; 2024 CaptionCraft. Built with ❤️ using Flask, Whisper AI, and Neo-Brutalist Design.</p>
+</div>
+</div>
+</footer>
+
+<!-- JavaScript -->
+<script>
+class CaptionCraftApp {
+    constructor() {
+        this.socket = null;
+        this.currentSessionId = null;
+        this.systemInfo = null;
+        
+        this.initializeSocket();
+        this.initializeElements();
+        this.loadSystemInfo();
+        this.bindEvents();
+    }
+    
+    initializeSocket() {
+        this.socket = io();
+        
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+        
+        this.socket.on('progress', (data) => {
+            if (data.session_id === this.currentSessionId) {
+                this.updateProgress(data.progress, data.message);
+            }
+        });
+        
+        this.socket.on('subtitles_ready', (data) => {
+            console.log('Subtitles ready:', data);
+            console.log('Current session ID:', this.currentSessionId);
+            
+            // If we have a session_id in data, use it, otherwise use current session
+            const sessionId = data.session_id || this.currentSessionId;
+            
+            if (sessionId && (data.session_id === this.currentSessionId || !this.currentSessionId)) {
+                console.log('Redirecting to editor...');
+                
+                // Update progress to show completion
+                this.updateProgress(100, 'Complete! Redirecting to editor...');
+                
+                // Small delay to show completion before redirect
+                setTimeout(() => {
+                    window.location.href = `/editor/${sessionId}`;
+                }, 1500);
+            } else {
+                console.log('Session ID mismatch or missing');
+                // Fallback: try to redirect anyway if we have any session ID
+                if (sessionId) {
+                    this.updateProgress(100, 'Complete! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = `/editor/${sessionId}`;
+                    }, 1500);
+                }
+            }
+        });
+        
+        this.socket.on('error', (data) => {
+            if (data.session_id === this.currentSessionId) {
+                this.showError(data.message);
+            }
+        });
+    }
+    
+    initializeElements() {
+        this.uploadZone = document.getElementById('uploadZone');
+        this.fileInput = document.getElementById('fileInput');
+        this.browseFilesBtn = document.getElementById('browseFilesBtn');
+        this.progressSection = document.getElementById('progressSection');
+        this.progressFill = document.getElementById('progressFill');
+        this.progressPercentage = document.getElementById('progressPercentage');
+        this.progressStatus = document.getElementById('progressStatus');
+        
+        // Configuration elements
+        this.modelSelect = document.getElementById('modelSelect');
+        this.languageSelect = document.getElementById('languageSelect');
+        this.vadToggle = document.getElementById('vadToggle');
+        this.modelInfo = document.getElementById('modelInfo');
+    }
+    
+    bindEvents() {
+        // File upload events
+        this.uploadZone.addEventListener('click', () => {
+            this.fileInput.click();
+        });
+        
+        this.browseFilesBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.fileInput.click();
+        });
+        
+        this.fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleFileSelect(e.target.files[0]);
+            }
+        });
+        
+        // Configuration change events
+        this.modelSelect.addEventListener('change', () => {
+            this.updateModelInfo();
+        });
+        
+        // Drag and drop
+        this.setupDragAndDrop();
+        this.setupKeyboardShortcuts();
+    }
+    
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + U - Upload file
+            if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+                e.preventDefault();
+                this.fileInput.click();
+                this.showNotification('📁 File picker opened (Shortcut: Ctrl+U)', 'info');
+            }
+            
+            // Escape - Cancel/Reset
+            if (e.key === 'Escape') {
+                this.resetUpload();
+            }
+            
+            // Ctrl/Cmd + Enter - Quick upload with current settings
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (this.progressSection.style.display === 'none') {
+                    this.fileInput.click();
+                }
+            }
+        });
+        
+        // Show keyboard shortcuts hint
+        setTimeout(() => {
+            this.showNotification('💡 Tip: Use Ctrl+U to upload files, Esc to reset', 'info');
+        }, 2000);
+    }
+    
+    resetUpload() {
+        this.currentSessionId = null;
+        this.fileInput.value = '';
+        this.progressSection.style.display = 'none';
+        this.uploadZone.classList.remove('dragover', 'bg-blue-50');
+        this.updateDragText(false);
+        this.showNotification('🔄 Upload reset', 'info');
+    }
+    
+    async loadSystemInfo() {
+        try {
+            const response = await fetch('/api/system-info');
+            this.systemInfo = await response.json();
+            this.populateLanguageOptions();
+            this.updateModelInfo();
+        } catch (error) {
+            console.error('Failed to load system info:', error);
+        }
+    }
+    
+    populateLanguageOptions() {
+        if (!this.systemInfo || !this.systemInfo.supported_languages) return;
+        
+        this.languageSelect.innerHTML = '';
+        
+        Object.entries(this.systemInfo.supported_languages).forEach(([code, name]) => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = name;
+            if (code === 'auto') option.selected = true;
+            this.languageSelect.appendChild(option);
+        });
+    }
+    
+    updateModelInfo() {
+        if (!this.systemInfo || !this.systemInfo.whisper_models) return;
+        
+        const selectedModel = this.modelSelect.value;
+        const modelData = this.systemInfo.whisper_models[selectedModel];
+        
+        if (modelData && this.modelInfo) {
+            this.modelInfo.innerHTML = `
+                <span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">Speed: ${modelData.speed}</span>
+                <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded ml-1">Quality: ${modelData.accuracy}</span>
+                <span class="inline-block bg-orange-100 text-orange-800 px-2 py-1 rounded ml-1">VRAM: ${modelData.vram}</span>
+            `;
+        }
+    }
+    
+    setupDragAndDrop() {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            this.uploadZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+        
+        this.uploadZone.addEventListener('dragenter', () => {
+            this.uploadZone.classList.add('bg-blue-50');
+        });
+        
+        this.uploadZone.addEventListener('dragleave', () => {
+            this.uploadZone.classList.remove('bg-blue-50');
+        });
+        
+        this.uploadZone.addEventListener('drop', (e) => {
+            this.uploadZone.classList.remove('bg-blue-50');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleFileSelect(files[0]);
+            }
+        });
+    }
+    
+    handleFileSelect(file) {
+        if (!this.validateFile(file)) return;
+        
+        this.uploadFile(file);
+    }
+    
+    validateFile(file) {
+        const allowedTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-msvideo', 'audio/mpeg', 'audio/wav', 'audio/mp4'];
+        const allowedExtensions = ['.mp4', '.avi', '.mov', '.mkv', '.mp3', '.wav', '.m4a', '.flac', '.ogg'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+            this.showNotification('❌ Unsupported file format! Please use: MP4, AVI, MOV, MKV, MP3, WAV, M4A, FLAC, OGG', 'error');
+            return false;
+        }
+        
+        if (file.size > 5 * 1024 * 1024 * 1024) {
+            this.showNotification(`❌ File too large! "${file.name}" is ${this.formatFileSize(file.size)}. Maximum size is 5GB.`, 'error');
+            return false;
+        }
+        
+        if (file.size < 1024) {
+            this.showNotification('❌ File too small! Please select a valid media file.', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span>${message}</span>
+            </div>
+            <button class="notification-close" onclick="this.parentElement.remove()">
+                ✕
+            </button>
+        `;
+        
+        // Add styles
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            background: type === 'error' ? '#dc3545' : 
+                       type === 'success' ? '#28a745' : 
+                       type === 'warning' ? '#ffc107' : '#007bff',
+            color: type === 'warning' ? '#000' : '#fff',
+            padding: '1rem 1.5rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            zIndex: '10000',
+            transform: 'translateX(400px)',
+            transition: 'transform 0.3s ease',
+            maxWidth: '400px',
+            fontSize: '14px',
+            fontWeight: '500',
+            border: '2px solid #000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem'
+        });
+        
+        // Add notification to DOM
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+    
+    uploadFile(file) {
+        // Show upload info
+        this.showNotification(`🚀 Starting upload: ${file.name} (${this.formatFileSize(file.size)})`, 'info');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('model', this.modelSelect.value);
+        formData.append('language', this.languageSelect.value);
+        formData.append('vad', this.vadToggle.checked);
+        
+        // Show progress
+        this.startTime = Date.now();
+        this.progressSection.style.display = 'block';
+        this.updateProgress(0, `📤 Uploading ${file.name}...`);
+        
+        // Simulate upload progress
+        let uploadProgress = 0;
+        const uploadInterval = setInterval(() => {
+            uploadProgress += Math.random() * 10;
+            if (uploadProgress < 90) {
+                this.updateProgress(Math.min(uploadProgress, 90), `📤 Uploading ${file.name}... (${Math.round(uploadProgress)}%)`);
+            }
+        }, 200);
+        
+        fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            clearInterval(uploadInterval);
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            this.currentSessionId = data.session_id;
+            this.updateProgress(100, '✅ Upload complete! Starting AI processing...');
+            this.showNotification(`✅ File uploaded successfully! Processing with ${this.modelSelect.options[this.modelSelect.selectedIndex].text}`, 'success');
+            
+            // Reset to processing phase
+            setTimeout(() => {
+                this.updateProgress(5, '🤖 Initializing AI model...');
+            }, 1000);
+        })
+        .catch(error => {
+            clearInterval(uploadInterval);
+            console.error('Upload error:', error);
+            this.showError(error.message);
+            this.progressSection.style.display = 'none';
+        });
+    }
+    
+    updateProgress(percentage, message) {
+        this.progressFill.style.width = percentage + '%';
+        this.progressPercentage.textContent = Math.round(percentage) + '%';
+        this.progressStatus.textContent = message;
+        
+        // Add visual feedback based on progress
+        if (percentage >= 100) {
+            this.progressFill.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+            this.progressFill.style.animation = 'pulse 1s ease-in-out';
+        } else if (percentage >= 75) {
+            this.progressFill.style.background = 'linear-gradient(90deg, #17a2b8, #007bff)';
+        } else if (percentage >= 50) {
+            this.progressFill.style.background = 'linear-gradient(90deg, #ffc107, #fd7e14)';
+        } else {
+            this.progressFill.style.background = 'var(--primary-color)';
+        }
+        
+        // Estimate time remaining
+        if (percentage > 0 && percentage < 100) {
+            const elapsed = Date.now() - this.startTime;
+            const estimated = (elapsed / percentage) * (100 - percentage);
+            const estimatedText = estimated > 60000 ? 
+                `~${Math.round(estimated / 60000)}m remaining` :
+                `~${Math.round(estimated / 1000)}s remaining`;
+            this.progressStatus.textContent = `${message} (${estimatedText})`;
+        }
+    }
+    
+    showError(message) {
+        this.showNotification(`❌ Error: ${message}`, 'error');
+        this.progressSection.style.display = 'none';
+        
+        // Reset upload zone
+        this.uploadZone.classList.remove('dragover', 'bg-blue-50');
+        this.updateDragText(false);
+    }
+    
+    updateDragText(isDragging) {
+        const uploadText = this.uploadZone.querySelector('.upload-text');
+        if (!uploadText) return;
+        
+        const title = uploadText.querySelector('p:first-child');
+        const subtitle = uploadText.querySelector('p:last-child');
+        
+        if (isDragging) {
+            title.textContent = '📁 Drop your files here!';
+            subtitle.textContent = 'Release to start processing';
+            title.style.color = 'var(--primary-color)';
+            subtitle.style.color = 'var(--primary-color)';
+        } else {
+            title.textContent = 'Drag & Drop Your Video Here';
+            subtitle.textContent = 'or';
+            title.style.color = '';
+            subtitle.style.color = '';
+        }
+    }
+}
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new CaptionCraftApp();
+});
+</script>
+
+</body></html> 

@@ -1,0 +1,25 @@
+# Flask and Web Framework
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+
+# AI and Machine Learning
+openai-whisper
+transformers
+numpy
+
+# Audio/Video Processing
+ffmpeg-python==0.2.0
+
+# Utilities
+python-socketio==5.10.0
+python-engineio==4.7.1
+pathlib
+tempfile
+threading
+
+# Development and Production
+gunicorn==21.2.0
+eventlet==0.33.3
+
+# Optional: For better performance
+numba==0.58.1 

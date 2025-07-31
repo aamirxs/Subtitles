@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CaptionCraft - Video Editor</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --primary-color: #b8d0e4;
+        --secondary-color: #f0f2f4;
+        --background-color: #f9f9f9;
+        --text-primary: #111418;
+        --text-secondary: #637488;
+        --accent-color: #e0e7ff;
+      }
+      body {
+        font-family: "Space Grotesk", sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-primary);
+      }
+      .button_primary {
+        @apply bg-[var(--primary-color)] hover:bg-[var(--accent-color)] text-[var(--text-primary)] font-bold py-2 px-4 rounded-md focus:outline-none ;
+      }
+      .button_secondary {
+        @apply bg-[var(--secondary-color)] hover:bg-gray-200 text-[var(--text-primary)] font-bold py-2 px-4 rounded-md focus:outline-none ;
+      }
+      .input {
+        @apply shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none  focus:border-[var(--primary-color)];
+      }
+      .card {
+        @apply bg-white rounded-md shadow-md p-6;
+      }
+      .typography_h1 {
+        @apply text-3xl font-bold text-[var(--text-primary)] mb-4;
+      }
+      .typography_h2 {
+        @apply text-2xl font-semibold text-[var(--text-primary)] mb-2;
+      }
+      .typography_body {
+        @apply text-base text-[var(--text-secondary)];
+      }
+    </style>
+</head>
+<body class="bg-background-color text-text-primary">
+<div class="flex flex-col min-h-screen">
+<header class="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 bg-white px-6 py-4 shadow-sm">
+<div class="flex items-center gap-3">
+<svg class="h-8 w-8 text-text-primary" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
+</svg>
+<h1 class="text-xl font-bold tracking-tight">CaptionCraft</h1>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-text-secondary hover:text-text-primary" href="#">My Files</a>
+<a class="text-sm font-medium text-text-secondary hover:text-text-primary" href="#">Templates</a>
+<a class="text-sm font-medium text-text-secondary hover:text-text-primary" href="#">Help</a>
+</nav>
+<button class="button_primary hidden md:inline-flex">New File</button>
+</header>
+<main class="flex flex-1 flex-col lg:flex-row">
+<div class="flex-1 p-6 lg:p-8">
+<div class="mx-auto max-w-4xl">
+<div class="mb-6 flex items-center justify-between">
+<h2 class="typography_h1 !mb-0" id="projectTitle">{{ filename or 'Untitled Project' }}</h2>
+<div class="flex items-center gap-2">
+<button class="button_secondary" onclick="exportSubtitles()">Export</button>
+<button class="button_primary" onclick="generateSubtitles()">Generate Subtitles</button>
+</div>
+</div>
+<div class="card !p-0 mb-8 border border-black shadow-[4px_4px_0px_#000]">
+<div class="relative aspect-video w-full overflow-hidden rounded-t-md" id="videoContainer">
+<video id="videoPlayer" class="w-full h-full object-cover" controls>
+<source src="{{ video_url or '' }}" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+<!-- Debug: Video URL = {{ video_url or 'NO_URL' }} -->
+<div class="absolute inset-0 flex items-center justify-center bg-black/30" id="playOverlay" style="display: none;">
+<button class="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform hover:scale-110" onclick="playVideo()">
+<svg fill="currentColor" height="48px" viewBox="0 0 256 256" width="48px" xmlns="http://www.w3.org/2000/svg">
+<path d="M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z"></path>
+</svg>
+</button>
+</div>
+</div>
+<div class="p-4">
+<div class="flex items-center gap-4">
+<span class="text-sm font-mono" id="currentTime">00:00</span>
+<div class="flex-1 h-2 bg-gray-200 rounded-full border border-black" id="progressContainer">
+<div class="h-full bg-[var(--primary-color)] rounded-full border-r-2 border-black" id="progressBar" style="width: 0%;"></div>
+</div>
+<span class="text-sm font-mono" id="totalTime">00:00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<aside class="w-full lg:w-96 bg-white border-l border-gray-200 p-6 lg:p-8">
+<div class="sticky top-24">
+<div class="flex items-center justify-between border-b border-black pb-2 mb-4">
+<h3 class="typography_h2 !mb-0">Subtitle Editor</h3>
+<div class="flex gap-2">
+<button class="text-xs bg-blue-100 px-2 py-1 rounded" onclick="autoSync()">🔄 Auto Sync</button>
+<button class="text-xs bg-green-100 px-2 py-1 rounded" onclick="playPause()">⏯️ Play</button>
+</div>
+</div>
+<div class="mb-4 p-3 bg-gray-50 rounded border">
+<div class="flex justify-between text-sm text-gray-600 mb-2">
+<span>Editing Tools:</span>
+<span id="segmentCount">0 segments</span>
+</div>
+<div class="flex gap-2 flex-wrap">
+<button class="text-xs bg-yellow-100 px-2 py-1 rounded" onclick="splitAtCurrentTime()">✂️ Split</button>
+<button class="text-xs bg-red-100 px-2 py-1 rounded" onclick="deleteSelected()">🗑️ Delete</button>
+<button class="text-xs bg-purple-100 px-2 py-1 rounded" onclick="adjustTiming()">⏱️ Timing</button>
+<button class="text-xs bg-indigo-100 px-2 py-1 rounded" onclick="autoTranslate()">🌍 Translate</button>
+</div>
+</div>
+<div class="space-y-4" id="subtitleSegments">
+<!-- Subtitle segments will be dynamically added here -->
+</div>
+<button class="button_primary w-full mt-4" onclick="addSubtitleSegment()">➕ Add Segment</button>
+</div>
+</aside>
+</main>
+</div>
+
+<script>
+class SubtitleEditor {
+    constructor() {
+        this.subtitles = [];
+        this.videoPlayer = document.getElementById('videoPlayer');
+        this.currentTime = document.getElementById('currentTime');
+        this.totalTime = document.getElementById('totalTime');
+        this.progressBar = document.getElementById('progressBar');
+        this.progressContainer = document.getElementById('progressContainer');
+        this.subtitleSegments = document.getElementById('subtitleSegments');
+        
+        this.initializeVideo();
+        this.loadSubtitles();
+        this.bindEvents();
+    }
+    
+    initializeVideo() {
+        if (this.videoPlayer) {
+            this.videoPlayer.addEventListener('loadedmetadata', () => {
+                this.totalTime.textContent = this.formatTime(this.videoPlayer.duration);
+            });
+            
+            this.videoPlayer.addEventListener('timeupdate', () => {
+                this.updateProgress();
+                this.highlightCurrentSubtitle();
+            });
+        }
+    }
+    
+    loadSubtitles() {
+        // Load subtitles from the session data
+        const sessionId = window.location.pathname.split('/').pop();
+        
+        fetch(`/api/session/${sessionId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Session error:', data.error);
+                    // Fallback to mock data
+                    this.subtitles = [
+                        {
+                            id: 1,
+                            start: 1,
+                            end: 5,
+                            text: "Generated subtitle will appear here after processing."
+                        }
+                    ];
+                } else {
+                    // Convert whisper segments to editor format
+                    this.subtitles = data.whisper_segments.map((segment, index) => ({
+                        id: index + 1,
+                        start: segment.start,
+                        end: segment.end,
+                        text: segment.text.trim()
+                    }));
+                }
+                this.renderSubtitleSegments();
+            })
+            .catch(error => {
+                console.error('Error loading session data:', error);
+                // Fallback to mock data
+                this.subtitles = [
+                    {
+                        id: 1,
+                        start: 1,
+                        end: 5,
+                        text: "Error loading subtitles. Please try again."
+                    }
+                ];
+                this.renderSubtitleSegments();
+            });
+    }
+    
+    renderSubtitleSegments() {
+        this.subtitleSegments.innerHTML = '';
+        
+        this.subtitles.forEach((subtitle, index) => {
+            const segmentDiv = document.createElement('div');
+            segmentDiv.className = 'flex items-start gap-3';
+            segmentDiv.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <span class="text-xs font-mono text-text-secondary">${this.formatTime(subtitle.start)}</span>
+                    <div class="w-px h-full bg-gray-300 my-1"></div>
+                    <span class="text-xs font-mono text-text-secondary">${this.formatTime(subtitle.end)}</span>
+                </div>
+                <textarea 
+                    class="input w-full min-h-[100px] border-black shadow-[2px_2px_0px_#000] focus:shadow-[3px_3px_0px_#000]" 
+                    placeholder="${subtitle.text ? '' : 'Add another subtitle segment...'}"
+                    data-segment-id="${subtitle.id}"
+                    onblur="updateSubtitleText(${subtitle.id}, this.value)"
+                >${subtitle.text}</textarea>
+            `;
+            this.subtitleSegments.appendChild(segmentDiv);
+        });
+    }
+    
+    updateProgress() {
+        if (this.videoPlayer && !isNaN(this.videoPlayer.duration)) {
+            const progress = (this.videoPlayer.currentTime / this.videoPlayer.duration) * 100;
+            this.progressBar.style.width = progress + '%';
+            this.currentTime.textContent = this.formatTime(this.videoPlayer.currentTime);
+        }
+    }
+    
+    highlightCurrentSubtitle() {
+        const currentTime = this.videoPlayer.currentTime;
+        const textareas = this.subtitleSegments.querySelectorAll('textarea');
+        
+        textareas.forEach((textarea, index) => {
+            const subtitle = this.subtitles[index];
+            if (subtitle && currentTime >= subtitle.start && currentTime <= subtitle.end) {
+                textarea.style.backgroundColor = '#e0e7ff';
+            } else {
+                textarea.style.backgroundColor = 'white';
+            }
+        });
+    }
+    
+    formatTime(seconds) {
+        if (isNaN(seconds)) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    bindEvents() {
+        // Progress bar click to seek
+        this.progressContainer.addEventListener('click', (e) => {
+            const rect = this.progressContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            const newTime = percentage * this.videoPlayer.duration;
+            this.videoPlayer.currentTime = newTime;
+        });
+    }
+}
+
+function updateSubtitleText(id, text) {
+    const editor = window.subtitleEditor;
+    const subtitle = editor.subtitles.find(s => s.id === id);
+    if (subtitle) {
+        subtitle.text = text;
+    }
+}
+
+function addSubtitleSegment() {
+    const editor = window.subtitleEditor;
+    const newId = Math.max(...editor.subtitles.map(s => s.id)) + 1;
+    const lastSubtitle = editor.subtitles[editor.subtitles.length - 1];
+    const newStart = lastSubtitle ? lastSubtitle.end + 1 : 0;
+    
+    editor.subtitles.push({
+        id: newId,
+        start: newStart,
+        end: newStart + 5,
+        text: ""
+    });
+    
+    editor.renderSubtitleSegments();
+}
+
+function playVideo() {
+    const video = document.getElementById('videoPlayer');
+    if (video) {
+        video.play();
+    }
+}
+
+function generateSubtitles() {
+    // Redirect to download page with generated subtitles
+    const sessionId = window.location.pathname.split('/').pop();
+    window.location.href = `/download/${sessionId}`;
+}
+
+function exportSubtitles() {
+    const editor = window.subtitleEditor;
+    const srtContent = editor.subtitles
+        .filter(s => s.text.trim())
+        .map((subtitle, index) => {
+            return `${index + 1}\n${formatSRTTime(subtitle.start)} --> ${formatSRTTime(subtitle.end)}\n${subtitle.text}\n`;
+        })
+        .join('\n');
+    
+    const blob = new Blob([srtContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'subtitles.srt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function formatSRTTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
+}
+
+// Additional editor functions
+function autoSync() {
+    alert('🔄 Auto-sync feature coming soon! This will automatically align subtitles with audio.');
+}
+
+function playPause() {
+    const video = document.getElementById('videoPlayer');
+    if (video.paused) {
+        video.play();
+    } else {
+        video.pause();
+    }
+}
+
+function splitAtCurrentTime() {
+    const editor = window.subtitleEditor;
+    const currentTime = editor.videoPlayer.currentTime;
+    alert(`✂️ Split function coming soon! Would split subtitle at ${editor.formatTime(currentTime)}`);
+}
+
+function deleteSelected() {
+    alert('🗑️ Delete function coming soon! This will delete the selected subtitle segment.');
+}
+
+function adjustTiming() {
+    alert('⏱️ Timing adjustment coming soon! This will allow fine-tuning of subtitle timings.');
+}
+
+function autoTranslate() {
+    alert('🌍 Translation feature coming soon! This will translate subtitles to different languages.');
+}
+
+// Initialize the editor when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.subtitleEditor = new SubtitleEditor();
+    
+    // Update segment count
+    const updateSegmentCount = () => {
+        const count = window.subtitleEditor.subtitles.length;
+        document.getElementById('segmentCount').textContent = `${count} segment${count !== 1 ? 's' : ''}`;
+    };
+    
+    // Update count periodically
+    setInterval(updateSegmentCount, 1000);
+});
+</script>
+
+</body></html> 
